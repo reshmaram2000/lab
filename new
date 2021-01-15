@@ -1,0 +1,1179 @@
+1. Hamming code
+
+#include<stdio.h>
+void main() {
+	int data[10],dataatrec[10];
+    	int c,c1,c2,c3,i;
+ 	
+	printf("Enter 4 bits of data one by one\n");
+    	scanf("%d",&data[0]);
+    	scanf("%d",&data[1]);
+    	scanf("%d",&data[2]);
+    	scanf("%d",&data[4]);
+ 
+    	//Calculation of even parity
+    	data[6]=data[0]^data[2]^data[4];
+	data[5]=data[0]^data[1]^data[4];
+	data[3]=data[0]^data[1]^data[2];
+ 
+	printf("\nEncoded data is\n");
+	for(i=0;i<7;i++)
+            printf("%d",data[i]);
+ 
+    	printf("\n\nEnter received data bits one by one\n");
+    	for(i=0;i<7;i++)
+            scanf("%d",&dataatrec[i]);
+ 
+    	c1=dataatrec[6]^dataatrec[4]^dataatrec[2]^dataatrec[0];
+	c2=dataatrec[5]^dataatrec[4]^dataatrec[1]^dataatrec[0];
+	c3=dataatrec[3]^dataatrec[2]^dataatrec[1]^dataatrec[0];
+	c=c3*4+c2*2+c1 ;
+ 
+	if(c==0) {
+		printf("\nNo error while transmission of data\n");
+    	}
+	else {
+		printf("\nError on position %d",c);
+    		printf("\nData sent : ");
+        	for(i=0;i<7;i++)
+        		printf("%d",data[i]);
+        	printf("\nData received : ");
+        	for(i=0;i<7;i++)
+        		printf("%d",dataatrec[i]);
+		printf("\nCorrect message is\n");
+ 		//if errorneous bit is 0 we complement it else vice versa
+		if(dataatrec[7-c]==0)
+			dataatrec[7-c]=1;
+        	else
+			dataatrec[7-c]=0;
+		for (i=0;i<7;i++) {
+			printf("%d",dataatrec[i]);
+		}
+		}
+}
+
+2. Leaky bucket
+
+#include<stdio.h>
+int main(){
+    int incoming, outgoing, buck_capacity, n, store = 0;
+    printf("Enter bucket capacity, outgoing rate and no of inputs: ");
+    scanf("%d %d %d", &buck_capacity, &outgoing, &n);
+
+    while (n != 0) { //loop over total number of inputs
+        printf("Enter the number of incoming packets: ");
+        scanf("%d", &incoming);
+        printf("Incoming packet size %d\n", incoming);
+  	if((incoming-outgoing) <= (buck_capacity-store)) //it is possible to send without dropping
+	{
+		int sent = outgoing>=incoming?incoming:outgoing; //if incoming is more than outgoing, total sent will be outgoing rest buff
+		if(sent < outgoing && store != 0)  //if incoming<outgoing, we can add values from the store to be sent till op cap is reached
+		{
+			int remaining = outgoing-sent;
+			while(remaining > 0 && store != 0) //keeps adding one to sent until we run out of op cap or nothing left in buff
+			{
+				remaining -= 1;
+				store -= 1;
+				sent += 1;
+			}
+		}
+		printf("%d packets sent out\n", sent);
+		if(outgoing<incoming)
+		{
+			store = store + (incoming - outgoing);
+		}
+	}
+    	else //packets need to be dropped
+    	{
+    		int dropped = (incoming-outgoing)-(buck_capacity-store); //excess packets are the ones that after sending cant be accomodated in buff
+		printf("%d packets dropped\n", dropped);
+		store = buck_capacity;
+    	}
+	printf("%d out of %d space used in the buffer\n", store, buck_capacity);
+        n--;
+    }
+}
+
+3. CRC
+
+#include<stdio.h>
+#include<string.h>
+#define N strlen(g)
+
+char t[28],cs[28],g[]="10001000000100001";
+int a,e,c;
+
+void xor()
+{
+    for(c = 1;c < N; c++)
+    	cs[c] = (( cs[c] == g[c])?'0':'1');
+}
+
+void crc(){
+    for(e=0;e<N;e++)
+        cs[e]=t[e];
+    do{
+        if(cs[0]=='1')
+            xor();
+        for(c=0;c<N-1;c++)
+            cs[c]=cs[c+1];
+        cs[c]=t[e++];
+    }while(e<=a+N-1);
+}
+
+int main()
+{
+    printf("\nEnter data : ");
+    scanf("%s",t);
+    printf("\n----------------------------------------");
+    printf("\nGeneratng polynomial : %s",g);
+    a=strlen(t);
+    for(e=a;e<a+N-1;e++)
+        t[e]='0';
+    printf("\n----------------------------------------");
+    printf("\nModified data is : %s",t);
+    printf("\n----------------------------------------");
+    crc();
+    printf("\n CRC checksum is : %s",cs);
+    for(e=a;e<a+N-1;e++)
+        t[e]=cs[e-a];
+    printf("\n----------------------------------------");
+    printf("\nFinal codeword transmitted is : %s",t);
+    printf("\n----------------------------------------");
+    printf("\nTest error detection 0(yes) 1(no)? : ");
+    scanf("%d",&e);
+    if(e==0)
+    {
+        do{
+            printf("\nEnter the position where error is to be inserted : ");
+            scanf("%d",&e);
+        }while(e==0 || e>a+N-1);
+        t[e-1]=(t[e-1]=='0')?'1':'0';
+        printf("\n----------------------------------------");
+        printf("\nErroneous data : %s\n",t);
+    }
+    crc();
+    for(e=0;(e<N-1) && (cs[e]!='1');e++);
+        if(e<N-1)
+            {
+             printf("\n CRC checksum is : %s",cs);
+            printf("\nError detected\n\n");
+            }
+        else
+            {
+             printf("\n CRC checksum is : %s",cs);
+            printf("\nNo error detected\n\n");
+            }
+            printf("\n----------------------------------------\n");
+        return 0;
+}
+
+4. Socket programming 
+
+vi hello.txt
+
+hello world
+
+make server
+gedit tcpserver.c
+gcc/cc tcpserver.c -o server
+./server
+
+make client
+gedit tcpclient.c
+gcc/cc tcpclient.c -o client
+./client
+
+
+//tcpserver.c
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<unistd.h>
+#include<netdb.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<sys/types.h>
+#include<sys/socket.h>
+
+#define PORT 5035
+#define MAX 60
+
+char buff[4096];
+FILE *f1;
+
+int main(int afg, char *argv[]) //dont need these command line args but keep if you want
+
+{
+	int sockfd, newsockfd, clength;
+	struct sockaddr_in serv_addr,cli_addr;
+	char str[MAX];
+	sockfd=socket(AF_INET, SOCK_STREAM,0);
+	serv_addr.sin_family=AF_INET;
+	serv_addr.sin_addr.s_addr=INADDR_ANY;
+	serv_addr.sin_port=htons(PORT);
+	printf("\nBinded");
+	bind(sockfd,(struct sockaddr*)&serv_addr, sizeof(serv_addr));
+	printf("\nListening...");
+	listen(sockfd, 5);
+	clength=sizeof(cli_addr);
+	newsockfd=accept(sockfd,(struct sockaddr*) &cli_addr,&clength);
+	close(sockfd);
+	read(newsockfd, &str, MAX);
+	printf("\nClient message\n File Name : %s\n", str);
+	f1=fopen(str, "r");
+	while(fgets(buff, 4096, f1)!=NULL) {
+		write(newsockfd, buff,MAX);
+		printf("\n"); }
+	fclose(f1);
+	printf("\nFile Transferred\n");
+	return 0;
+}
+
+//tcpclient.c
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<unistd.h>
+#include<netdb.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<sys/types.h>
+#include<sys/socket.h>
+
+#define PORT 5035
+#define MAX 60
+
+int main(int arg,char*argv[]) //cmd line not req
+{
+	int sockfd,n;
+	struct sockaddr_in serv_addr;
+	//struct hostent*server;
+	char send[MAX],recvline[MAX];
+	sockfd=socket(AF_INET,SOCK_STREAM,0);
+	serv_addr.sin_family=AF_INET;
+	serv_addr.sin_addr.s_addr=inet_addr("127.0.0.1");
+	serv_addr.sin_port=htons(PORT);
+	connect(sockfd,(struct sockaddr*)&serv_addr,sizeof(serv_addr));
+	printf("\nEnter the source file name : \n");
+	scanf("%s",send);
+	write(sockfd,send,MAX);
+	while((n=read(sockfd,recvline,MAX))!=0) {
+		printf("%s",recvline);}
+	close(sockfd);
+	return 0;
+}
+
+5. NS3
+
+1.
+
+#include "ns3/core-module.h"
+#include "ns3/network-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/point-to-point-module.h"
+#include "ns3/applications-module.h"
+#include "ns3/traffic-control-module.h"
+#include "ns3/flow-monitor-module.h"
+
+// Network topology
+//
+//       10.1.1.0          10.1.1.2
+// n0 -------------- n1 -------------- n2
+//    point-to-point    point-to-point
+
+using namespace ns3;
+
+int
+main (int argc, char *argv[])
+{
+  double simulationTime = 10; //seconds
+  std::string transportProt = "Udp";
+  std::string socketType;
+
+  if (transportProt.compare ("Tcp") == 0)
+    {
+      socketType = "ns3::TcpSocketFactory";
+    }
+  else
+    {
+      socketType = "ns3::UdpSocketFactory";
+    }
+
+  NodeContainer nodes;
+  nodes.Create (3);
+
+  PointToPointHelper pointToPoint;
+  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("10Mbps"));
+  pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
+  pointToPoint.SetQueue ("ns3::DropTailQueue", "MaxSize", StringValue ("1p"));
+
+  NetDeviceContainer devices;
+  devices = pointToPoint.Install (nodes.Get(0),nodes.Get(1));
+  NetDeviceContainer devices1;
+  devices1 = pointToPoint.Install (nodes.Get(1),nodes.Get(2));
+
+  InternetStackHelper stack;
+  stack.Install (nodes);
+
+  Ipv4AddressHelper address;
+  address.SetBase ("10.1.1.0", "255.255.255.0");
+  Ipv4InterfaceContainer interfaces = address.Assign (devices);
+
+  address.SetBase ("10.1.2.0", "255.255.255.0");
+  Ipv4InterfaceContainer interfaces1 = address.Assign (devices1);
+ 
+  Ipv4GlobalRoutingHelper::PopulateRoutingTables();
+
+ //Flow
+  uint16_t port = 7;
+  Address localAddress (InetSocketAddress (Ipv4Address::GetAny (), port));
+  PacketSinkHelper packetSinkHelper (socketType, localAddress);
+  ApplicationContainer sinkApp = packetSinkHelper.Install (nodes.Get (2));
+
+  sinkApp.Start (Seconds (0.0));
+  sinkApp.Stop (Seconds (simulationTime + 0.1));
+
+
+  OnOffHelper onoff (socketType, Ipv4Address::GetAny ());
+  onoff.SetAttribute ("OnTime",  StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
+  onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
+  onoff.SetAttribute ("DataRate", StringValue ("50Mbps")); //bit/s
+  ApplicationContainer apps;
+
+  InetSocketAddress rmt (interfaces1.GetAddress (1), port);
+  rmt.SetTos (0xb8);
+  AddressValue remoteAddress (rmt);
+  onoff.SetAttribute ("Remote", remoteAddress);
+  apps.Add (onoff.Install (nodes.Get (0)));
+  apps.Start (Seconds (1.0));
+  apps.Stop (Seconds (simulationTime + 0.1));
+
+  FlowMonitorHelper flowmon;
+  Ptr<FlowMonitor> monitor = flowmon.InstallAll();
+
+  Simulator::Stop (Seconds (simulationTime + 5));
+  Simulator::Run ();
+
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
+  std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
+  std::cout << std::endl << "*** Flow monitor statistics ***" << std::endl;
+  std::cout << "  Tx Packets/Bytes:   " << stats[1].txPackets << " / " << stats[1].txBytes << std::endl;
+  std::cout << "  Rx Packets/Bytes:   " << stats[1].rxPackets << " / " << stats[1].rxBytes << std::endl;
+  std::cout << "  Lost Packets/Bytes:   " << stats[1].lostPackets << std::endl;
+  Simulator::Destroy ();
+  return 0;
+}
+
+2.
+
+#include "ns3/core-module.h"
+#include "ns3/point-to-point-module.h"
+#include "ns3/network-module.h"
+#include "ns3/applications-module.h"
+#include "ns3/mobility-module.h"
+#include "ns3/csma-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/yans-wifi-helper.h"
+#include "ns3/ssid.h"
+#include "ns3/flow-monitor-module.h"
+#include "ns3/wifi-module.h"
+
+// Default Network Topology
+//
+//   Wifi 10.1.3.0
+//                 AP
+//  *    *    *    *
+//  |    |    |    |    10.1.1.0
+// n5   n6   n7   n0 -------------- n1   n2   n3   n4
+//                   point-to-point  |    |    |    |
+//                                   ================
+//                                     LAN 10.1.2.0
+
+using namespace ns3;
+
+NS_LOG_COMPONENT_DEFINE ("ThirdScriptExample");
+
+int 
+main (int argc, char *argv[])
+{
+  bool verbose = true;
+  uint32_t nCsma = 3;
+  uint32_t nWifi = 3;
+  bool tracing = false;
+  std::string transportProt = "Udp";
+  std::string socketType;
+
+  if (transportProt.compare ("Tcp") == 0)
+    {
+      socketType = "ns3::TcpSocketFactory";
+    }
+  else
+    {
+      socketType = "ns3::UdpSocketFactory";
+    }
+
+  // The underlying restriction of 18 is due to the grid position
+  // allocator's configuration; the grid layout will exceed the
+  // bounding box if more than 18 nodes are provided.
+  if (nWifi > 18)
+    {
+      std::cout << "nWifi should be 18 or less; otherwise grid layout exceeds the bounding box" << std::endl;
+      return 1;
+    }
+
+  NodeContainer p2pNodes;
+  p2pNodes.Create (2);
+
+  PointToPointHelper pointToPoint;
+  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
+  pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
+
+  NetDeviceContainer p2pDevices;
+  p2pDevices = pointToPoint.Install (p2pNodes);
+
+  NodeContainer csmaNodes;
+  csmaNodes.Add (p2pNodes.Get (1));
+  csmaNodes.Create (nCsma);
+
+  CsmaHelper csma;
+  csma.SetChannelAttribute ("DataRate", StringValue ("100Mbps"));
+  csma.SetChannelAttribute ("Delay", TimeValue (NanoSeconds (6560)));
+
+  NetDeviceContainer csmaDevices;
+  csmaDevices = csma.Install (csmaNodes);
+
+  NodeContainer wifiStaNodes;
+  wifiStaNodes.Create (nWifi);
+  NodeContainer wifiApNode = p2pNodes.Get (0);
+
+  YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
+  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  phy.SetChannel (channel.Create ());
+
+  WifiHelper wifi;
+  wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
+
+  WifiMacHelper mac;
+  Ssid ssid = Ssid ("ns-3-ssid");
+  mac.SetType ("ns3::StaWifiMac",
+               "Ssid", SsidValue (ssid),
+               "ActiveProbing", BooleanValue (false));
+
+  NetDeviceContainer staDevices;
+  staDevices = wifi.Install (phy, mac, wifiStaNodes);
+
+  mac.SetType ("ns3::ApWifiMac",
+               "Ssid", SsidValue (ssid));
+
+  NetDeviceContainer apDevices;
+  apDevices = wifi.Install (phy, mac, wifiApNode);
+
+  MobilityHelper mobility;
+
+  mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
+                                 "MinX", DoubleValue (0.0),
+                                 "MinY", DoubleValue (0.0),
+                                 "DeltaX", DoubleValue (5.0),
+                                 "DeltaY", DoubleValue (10.0),
+                                 "GridWidth", UintegerValue (3),
+                                 "LayoutType", StringValue ("RowFirst"));
+
+  mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+                             "Bounds", RectangleValue (Rectangle (-50, 50, -50, 50)));
+  mobility.Install (wifiStaNodes);
+
+  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  mobility.Install (wifiApNode);
+
+  InternetStackHelper stack;
+  stack.Install (csmaNodes);
+  stack.Install (wifiApNode);
+  stack.Install (wifiStaNodes);
+
+  Ipv4AddressHelper address;
+
+  address.SetBase ("10.1.1.0", "255.255.255.0");
+  Ipv4InterfaceContainer p2pInterfaces;
+  p2pInterfaces = address.Assign (p2pDevices);
+
+  address.SetBase ("10.1.2.0", "255.255.255.0");
+  Ipv4InterfaceContainer csmaInterfaces;
+  csmaInterfaces = address.Assign (csmaDevices);
+
+  address.SetBase ("10.1.3.0", "255.255.255.0");
+  address.Assign (staDevices);
+  address.Assign (apDevices);
+
+//Flow
+  uint16_t port = 7;
+  Address localAddress (InetSocketAddress (Ipv4Address::GetAny (), port));
+  PacketSinkHelper packetSinkHelper (socketType, localAddress);
+  ApplicationContainer sinkApp = packetSinkHelper.Install (csmaNodes.Get (nCsma));
+
+  sinkApp.Start (Seconds (0.0));
+  sinkApp.Stop (Seconds (simulationTime + 0.1));
+
+  uint32_t payloadSize = 1448;
+  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (payloadSize));
+
+  OnOffHelper onoff (socketType, Ipv4Address::GetAny ());
+  onoff.SetAttribute ("OnTime",  StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
+  onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
+  onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
+  onoff.SetAttribute ("DataRate", StringValue ("50Mbps")); //bit/s
+  ApplicationContainer apps;
+
+  InetSocketAddress rmt (csmaInterfaces.GetAddress (nCsma), port);
+  rmt.SetTos (0xb8);
+  AddressValue remoteAddress (rmt);
+  onoff.SetAttribute ("Remote", remoteAddress);
+  apps.Add (onoff.Install (wifiStaNodes.Get (nWifi-1)));
+  apps.Start (Seconds (1.0));
+  apps.Stop (Seconds (simulationTime + 0.1));
+  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+  Simulator::Stop (Seconds (10.0));
+
+  FlowMonitorHelper flowmon;
+  Ptr<FlowMonitor> monitor = flowmon.InstallAll();	
+  Simulator::Run ();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
+  std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
+  std::cout << std::endl << "*** Flow monitor statistics ***" << std::endl;
+  std::cout << "  Tx Packets/Bytes:   " << stats[1].txPackets<< " / " << stats[1].txBytes << std::endl;
+  std::cout << "  Offered Load: " << stats[1].txBytes * 8.0 / (stats[1].timeLastTxPacket.GetSeconds () - stats[1].timeFirstTxPacket.GetSeconds ()) / 1000000 << " Mbps" << std::endl;
+  std::cout << "  Rx Packets/Bytes:   " << stats[1].rxPackets<< " / " << stats[1].rxBytes << std::endl;
+  std::cout << "  Throughput: " << stats[1].rxBytes * 8.0 / (stats[1].timeLastRxPacket.GetSeconds () - stats[1].timeFirstRxPacket.GetSeconds ()) / 1000000 << " Mbps" << std::endl;
+  std::cout << "  Mean delay:   " << stats[1].delaySum.GetSeconds () / stats[1].rxPackets << std::endl;
+  std::cout << "  Mean jitter:   " << stats[1].jitterSum.GetSeconds () / (stats[1].rxPackets - 1) << std::endl;
+  Simulator::Destroy ();
+  return 0;
+}
+
+3.
+
+// Network topology
+//
+//       n0    n1   n2   n3    n4    n5
+//       |     |    |     |     |     |
+//     =================================
+//
+//  node n2,n1,n3,n4,n5 pings to node n0
+//  node n0 generates protocol 2 (IGMP) to node n3
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <cassert>
+
+#include "ns3/core-module.h"
+#include "ns3/network-module.h"
+#include "ns3/csma-module.h"
+#include "ns3/applications-module.h"
+#include "ns3/internet-apps-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/flow-monitor-module.h"
+using namespace ns3;
+
+NS_LOG_COMPONENT_DEFINE ("CsmaPingExample");
+
+int
+main (int argc, char *argv[])
+{
+
+  // Here, we will explicitly create six nodes.
+  NS_LOG_INFO ("Create nodes.");
+  NodeContainer c;
+  c.Create (6);
+  std::string transportProt = "Udp";
+  std::string socketType;
+
+  if (transportProt.compare ("Tcp") == 0)
+    {
+      socketType = "ns3::TcpSocketFactory";
+    }
+  else
+    {
+      socketType = "ns3::UdpSocketFactory";
+    }
+
+  // connect all our nodes to a shared channel.
+  NS_LOG_INFO ("Build Topology.");
+  CsmaHelper csma;
+  csma.SetChannelAttribute ("DataRate", DataRateValue (DataRate (5000000)));
+  csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
+  csma.SetDeviceAttribute ("EncapsulationMode", StringValue ("Llc"));
+  NetDeviceContainer devs = csma.Install (c);
+
+  // add an ip stack to all nodes.
+  NS_LOG_INFO ("Add ip stack.");
+  InternetStackHelper ipStack;
+  ipStack.Install (c);
+
+  // assign ip addresses
+  NS_LOG_INFO ("Assign ip addresses.");
+  Ipv4AddressHelper ip;
+  ip.SetBase ("192.168.1.0", "255.255.255.0");
+  Ipv4InterfaceContainer addresses = ip.Assign (devs);
+
+  NS_LOG_INFO ("Create Source");
+  InetSocketAddress dst = InetSocketAddress (addresses.GetAddress (0));
+  OnOffHelper onoff = OnOffHelper ("ns3::Ipv4RawSocketFactory", dst);
+  onoff.SetAttribute ("OnTime",  StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
+  onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
+  onoff.SetAttribute ("PacketSize", UintegerValue (1100));
+  onoff.SetAttribute ("DataRate", StringValue ("50Mbps")); //bit/s
+  ApplicationContainer apps;
+  ApplicationContainer apps = onoff.Install (c.Get (1));
+  apps.Start (Seconds (1.0));
+  apps.Stop (Seconds (10.0));
+
+  NS_LOG_INFO ("Create Sink.");
+  PacketSinkHelper sink = PacketSinkHelper ("ns3::Ipv4RawSocketFactory", dst);
+  apps = sink.Install (c.Get (3));
+  apps.Start (Seconds (0.0));
+  apps.Stop (Seconds (11.0));
+
+  NS_LOG_INFO ("Create pinger");
+  V4PingHelper ping = V4PingHelper (addresses.GetAddress (0));
+  NodeContainer pingers;
+  pingers.Add (c.Get (2));
+  pingers.Add (c.Get (1));
+  pingers.Add (c.Get (3));
+  pingers.Add (c.Get (4));
+  pingers.Add (c.Get (5));
+  apps = ping.Install (pingers);
+  apps.Start (Seconds (2.0));
+  apps.Stop (Seconds (5.0));
+
+  FlowMonitorHelper flowmon;
+  Ptr<FlowMonitor> monitor = flowmon.InstallAll();
+
+  Simulator::Stop (Seconds (10 + 5));
+
+  NS_LOG_INFO ("Run Simulation.");
+  Simulator::Run ();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
+  std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
+  std::cout << std::endl << "*** Flow monitor statistics ***" << std::endl;
+  std::cout << "  Tx Packets/Bytes:   " << stats[1].txPackets<< " / " << stats[1].txBytes << std::endl;
+  std::cout << "  Offered Load: " << stats[1].txBytes * 8.0 / (stats[1].timeLastTxPacket.GetSeconds () - stats[1].timeFirstTxPacket.GetSeconds ()) / 1000000 << " Mbps" << std::endl;
+  std::cout << "  Rx Packets/Bytes:   " << stats[1].rxPackets<< " / " << stats[1].rxBytes << std::endl;
+  std::cout << "  Throughput: " << stats[1].rxBytes * 8.0 / (stats[1].timeLastRxPacket.GetSeconds () - stats[1].timeFirstRxPacket.GetSeconds ()) / 1000000 << " Mbps" << std::endl;
+  std::cout << "  Mean delay:   " << stats[1].delaySum.GetSeconds () / stats[1].rxPackets << std::endl;
+  std::cout << "  Mean jitter:   " << stats[1].jitterSum.GetSeconds () / (stats[1].rxPackets - 1) << std::endl;
+  Simulator::Destroy ();
+  NS_LOG_INFO ("Done.");
+  return 0;
+}
+
+
+1. 
+
+1. Create a simple 3 node topology using NodeContainer topology helper as
+no---n1---n2. Use point to point links between two nodes.
+// Network topology
+//
+// 10.1.1.0                10.1.2.0
+// n0 -------------- n1------------------n2
+// point-to-point        point-to-point
+//
+2. Install internet stack on all nodes.
+3. Assign IP4 addresses to netdevice containing two nodes at a time
+4. Set network address for interfaces
+5. Populate the global routing table between all nodes
+6. Install a UDP socket instance on Node0 as sender that will connect to
+Node3 as receiver.
+7. Start the UDP application at time 1.0 at rate Rate1
+8. Use the ns-3 tracing mechanism to record the network performance.
+// The output will consist of all the traced statistics collected at the network
+layer (by the flow monitor) and the application layer.
+9. vary the bandwidth of point-to-point link and observe the performance
+10.Usegnuplot/matplotlib to visualise plots of bandwidth vs packet drop.
+11.Conclude the performance from graph
+12.Perform the above experiment for different topology connection.
+
+2.
+
+1. Create a simple 2 node point to point topology using NodeContainer topology helper as
+n0---n1. n0 will be the Access point for the Wifi network and n1 will connect to a LAN network.
+// Default Network Topology
+//
+//   Wifi 10.1.3.0
+//                 AP
+//  *    *    *    *
+//  |    |    |    |    10.1.1.0
+// n5   n6   n7   n0 -------------- n1   n2   n3   n4
+//                   point-to-point  |    |    |    |
+//                                   ================
+//                                     LAN 10.1.2.0
+2. Define number of csma nodes and Wifi nodes <250. 
+3. Create nCsma nodes using the nodeContainer and set network layer parameters using csmaHelper
+4. Create Wifi nodes using nodeContainer and set parameters using wifiHelper. Define stationary nodes and acces point of the network. 
+5. Set phy, mac and wifi parameters and install them onto nodes.
+6. Use mobility helper to set intital stationary conditions on all nodes. Use set mobility model to set all nodes other than AP as mobile. 
+2. Install internet stack on all nodes.
+3. Assign IP4 addresses to netdevice containing two nodes at a time
+4. Set network address for interfaces
+5. Populate the global routing table between all nodes
+6. Install a UDP socket instance on Node0 as sender that will connect to
+Node1 as receiver in case of p2p network.
+7. Start the UDP application at time 1.0 at rate Rate1
+8. Use the ns-3 tracing mechanism to record the network performance.
+// The output will consist of all the traced statistics collected at the network
+layer (by the flow monitor) and the application layer.
+9. vary the bandwidth of point-to-point link and observe the performance
+10.Usegnuplot/matplotlib to visualise plots of bandwidth vs packet drop.
+11.Conclude the performance from graph
+12.Perform the above experiment for different topology connection.
+
+
+3.
+
+// Network topology
+//
+//       n0    n1   n2   n3    n4    n5
+//       |     |    |     |     |     |
+//     =================================
+//
+//  node n2,n1,n3,n4,n5 pings to node n0
+//  node n0 generates protocol 2 (IGMP) to node n3
+
+1. Create a simple 6 node topology using NodeContainer topology helper as shown above.
+2. Create nCsma nodes using the nodeContainer and set network layer parameters using csmaHelper
+2. Install internet stack on all nodes.
+3. Assign IP4 addresses to netdevice containing two nodes at a time
+4. Set network address for interfaces
+5. Set the source node as n0 using the socket instance and the sink as n3.
+6. Add 5 pingers using Ping Helper. All nodes ping to n0.
+8. Use the ns-3 tracing mechanism to record the network performance.
+// The output will consist of all the traced statistics collected at the network
+layer (by the flow monitor) and the application layer.
+9. vary the bandwidth of point-to-point link and observe the performance
+10.Usegnuplot/matplotlib to visualise plots of bandwidth vs packet drop.
+11.Conclude the performance from graph
+12.Perform the above experiment for different topology connection.
+
+
+
+#include "ns3/core-module.h"
+#include "ns3/network-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/point-to-point-module.h"
+#include "ns3/applications-module.h"
+#include "ns3/traffic-control-module.h"
+#include "ns3/flow-monitor-module.h"
+
+//
+// Network topology
+//
+//       10.1.1.0       10.1.2.0
+// n0 -------------- n1-------------n2
+//    point-to-point      p2p
+//
+
+using namespace ns3;
+
+int
+main ()
+{
+  double simulationTime = 10; //seconds
+  std::string transportProt = "Udp";
+  std::string socketType;
+
+  if (transportProt.compare ("Tcp") == 0)
+    {
+      socketType = "ns3::TcpSocketFactory";
+    }
+  else
+    {
+      socketType = "ns3::UdpSocketFactory";
+    }
+
+  NodeContainer nodes;
+  nodes.Create (3);
+
+  PointToPointHelper pointToPoint;
+  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("10Mbps"));
+  pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
+  pointToPoint.SetQueue ("ns3::DropTailQueue", "MaxSize", StringValue ("1p"));
+
+  NetDeviceContainer devices;
+  devices = pointToPoint.Install (nodes.Get(0),nodes.Get(1));
+ 
+  NetDeviceContainer devices1;
+  devices1 = pointToPoint.Install (nodes.Get(1),nodes.Get(2));
+
+  InternetStackHelper stack;
+  stack.Install (nodes);
+
+  Ipv4AddressHelper address;
+  address.SetBase ("10.1.1.0", "255.255.255.0");
+  Ipv4InterfaceContainer interfaces = address.Assign (devices);
+
+  address.SetBase ("10.1.2.0", "255.255.255.0");
+  Ipv4InterfaceContainer interfaces1 = address.Assign (devices1);
+
+  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+
+  //Flow
+  uint16_t port = 7;
+  Address localAddress (InetSocketAddress (Ipv4Address::GetAny (), port));
+  PacketSinkHelper packetSinkHelper (socketType, localAddress);
+  ApplicationContainer sinkApp = packetSinkHelper.Install (nodes.Get (2));
+
+  sinkApp.Start (Seconds (0.0));
+  sinkApp.Stop (Seconds (simulationTime + 0.1));
+
+  OnOffHelper onoff (socketType, Ipv4Address::GetAny ());
+  onoff.SetAttribute ("OnTime",  StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
+  onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
+  onoff.SetAttribute ("DataRate", StringValue ("50Mbps")); //bit/s
+  ApplicationContainer apps;
+
+  InetSocketAddress rmt (interfaces1.GetAddress (1), port);
+  rmt.SetTos (0xb8);
+  AddressValue remoteAddress (rmt);
+  onoff.SetAttribute ("Remote", remoteAddress);
+  apps.Add (onoff.Install (nodes.Get (0)));
+  apps.Start (Seconds (1.0));
+  apps.Stop (Seconds (simulationTime + 0.1));
+
+  FlowMonitorHelper flowmon;
+  Ptr<FlowMonitor> monitor = flowmon.InstallAll();
+
+
+  Simulator::Stop (Seconds (simulationTime + 5));
+  Simulator::Run ();
+
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
+
+  std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
+  std::cout << std::endl << "*** Flow monitor statistics ***" << std::endl;
+
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator iter = stats.begin (); iter != stats.end(); ++iter)
+  {
+    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (iter->first);
+    std::cout << "Flow ID: " << iter->first << " Src Addr " << t.sourceAddress << " Dst Addr " <<t.destinationAddress<< std::endl;
+    std::cout << "Tx Packets = " << iter->second.txPackets<< std::endl;
+    std::cout << "Rx Packets = " << iter->second.rxPackets<< std::endl;
+    std::cout << "Lost Packets = " << iter->second.lostPackets<< std::endl; 
+   } 
+
+ Simulator::Destroy ();
+ return 0;
+}
+
+
+
+
+#include "ns3/core-module.h"
+#include "ns3/point-to-point-module.h"
+#include "ns3/network-module.h"
+#include "ns3/applications-module.h"
+#include "ns3/mobility-module.h"
+#include "ns3/csma-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/yans-wifi-helper.h"
+#include "ns3/ssid.h"
+#include "ns3/traffic-control-module.h"
+#include "ns3/flow-monitor-module.h"
+
+// Default Network Topology
+//
+//   Wifi 10.1.3.0
+//                 AP
+//  *    *    *    *
+//  |    |    |    |    10.1.1.0
+// n5   n6   n7   n0 -------------- n1   n2   n3   n4
+//                   point-to-point  |    |    |    |
+//                                   ================
+//                                     LAN 10.1.2.0
+
+using namespace ns3;
+
+NS_LOG_COMPONENT_DEFINE ("ThirdScriptExample");
+
+int 
+main (int argc, char *argv[])
+{
+  bool verbose = true;
+  uint32_t nCsma = 3;
+  uint32_t nWifi = 3;
+  bool tracing = false;
+
+  std::string transportProt = "Udp";
+  std::string socketType;
+
+  if (transportProt.compare ("Tcp") == 0)
+    {
+      socketType = "ns3::TcpSocketFactory";
+    }
+  else
+    {
+      socketType = "ns3::UdpSocketFactory";
+    }
+
+  // The underlying restriction of 18 is due to the grid position
+  // allocator's configuration; the grid layout will exceed the
+  // bounding box if more than 18 nodes are provided.
+  if (nWifi > 18)
+    {
+      std::cout << "nWifi should be 18 or less; otherwise grid layout exceeds the bounding box" << std::endl;
+      return 1;
+    }
+
+
+  NodeContainer p2pNodes;
+  p2pNodes.Create (2);
+
+  PointToPointHelper pointToPoint;
+  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
+  pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
+
+  NetDeviceContainer p2pDevices;
+  p2pDevices = pointToPoint.Install (p2pNodes);
+
+  NodeContainer csmaNodes;
+  csmaNodes.Add (p2pNodes.Get (1));
+  csmaNodes.Create (nCsma);
+
+  CsmaHelper csma;
+  csma.SetChannelAttribute ("DataRate", StringValue ("100Mbps"));
+  csma.SetChannelAttribute ("Delay", TimeValue (NanoSeconds (6560)));
+
+  NetDeviceContainer csmaDevices;
+  csmaDevices = csma.Install (csmaNodes);
+
+  NodeContainer wifiStaNodes;
+  wifiStaNodes.Create (nWifi);
+  NodeContainer wifiApNode = p2pNodes.Get (0);
+
+  YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
+  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  phy.SetChannel (channel.Create ());
+
+  WifiHelper wifi;
+  wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
+
+  WifiMacHelper mac;
+  Ssid ssid = Ssid ("ns-3-ssid");
+  mac.SetType ("ns3::StaWifiMac",
+               "Ssid", SsidValue (ssid),
+               "ActiveProbing", BooleanValue (false));
+
+  NetDeviceContainer staDevices;
+  staDevices = wifi.Install (phy, mac, wifiStaNodes);
+
+  mac.SetType ("ns3::ApWifiMac",
+               "Ssid", SsidValue (ssid));
+
+  NetDeviceContainer apDevices;
+  apDevices = wifi.Install (phy, mac, wifiApNode);
+
+  MobilityHelper mobility;
+
+  mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
+                                 "MinX", DoubleValue (0.0),
+                                 "MinY", DoubleValue (0.0),
+                                 "DeltaX", DoubleValue (5.0),
+                                 "DeltaY", DoubleValue (10.0),
+                                 "GridWidth", UintegerValue (3),
+                                 "LayoutType", StringValue ("RowFirst"));
+
+  mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+                             "Bounds", RectangleValue (Rectangle (-50, 50, -50, 50)));
+  mobility.Install (wifiStaNodes);
+
+  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  mobility.Install (wifiApNode);
+
+  InternetStackHelper stack;
+  stack.Install (csmaNodes);
+  stack.Install (wifiApNode);
+  stack.Install (wifiStaNodes);
+
+  Ipv4AddressHelper address;
+
+  address.SetBase ("10.1.1.0", "255.255.255.0");
+  Ipv4InterfaceContainer p2pInterfaces;
+  p2pInterfaces = address.Assign (p2pDevices);
+
+  address.SetBase ("10.1.2.0", "255.255.255.0");
+  Ipv4InterfaceContainer csmaInterfaces;
+  csmaInterfaces = address.Assign (csmaDevices);
+
+  address.SetBase ("10.1.3.0", "255.255.255.0");
+  address.Assign (staDevices);
+  address.Assign (apDevices);
+
+  //Flow
+  uint16_t port = 7;
+  Address localAddress (InetSocketAddress (Ipv4Address::GetAny (), port));
+  PacketSinkHelper packetSinkHelper (socketType, localAddress);
+  ApplicationContainer sinkApp = packetSinkHelper.Install (csmaNodes.Get (nCsma));
+
+  sinkApp.Start (Seconds (0.0));
+  sinkApp.Stop (Seconds (simulationTime + 0.1));
+
+  uint32_t payloadSize = 1448;
+  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (payloadSize));
+
+  OnOffHelper onoff (socketType, Ipv4Address::GetAny ());
+  onoff.SetAttribute ("OnTime",  StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
+  onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
+  onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
+  onoff.SetAttribute ("DataRate", StringValue ("50Mbps")); //bit/s
+  ApplicationContainer apps;
+
+  InetSocketAddress rmt (csmaInterfaces.GetAddress (nCsma), port);
+  rmt.SetTos (0xb8);
+  AddressValue remoteAddress (rmt);
+  onoff.SetAttribute ("Remote", remoteAddress);
+  apps.Add (onoff.Install (wifiStaNodes.Get (nWifi-1)));
+  apps.Start (Seconds (1.0));
+  apps.Stop (Seconds (simulationTime + 0.1));
+
+  FlowMonitorHelper flowmon;
+  Ptr<FlowMonitor> monitor = flowmon.InstallAll();
+
+
+  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+
+  Simulator::Stop (Seconds (10.0));
+  Simulator::Run ();
+  monitor->CheckForLostPackets ();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
+  std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
+  std::cout << std::endl << "*** Flow monitor statistics ***" << std::endl;
+  for(std::map<FlowId, FlowMonitor::FlowStats>::const_iterator iter =stats.begin();iter!=stats.end();++iter)
+  {
+  Ipv4FlowClassifier::FiveTuple t=classifier->FindFlow(iter->first);
+  std::cout << "Flow ID: " << iter->first << " Src Addr " << t.sourceAddress << " Dst Addr " <<t.destinationAddress<< std::endl;
+  std::cout << "Tx Packets = " << iter->second.txPackets<< std::endl;
+  std::cout << "Rx Packets = " << iter->second.rxPackets<< std::endl;
+  std::cout << "Lost Packets = " << iter->second.lostPackets<< std::endl; 
+  }
+  Simulator::Destroy ();
+  return 0;
+}
+
+
+
+// Network topology
+//
+//       n0    n1   n2   n3   n4      n5
+//       |     |    |    |     |       |
+//     ==================================
+//
+//  node n1,n2,n3,n4,n5 pings to node n0
+//  node n0 generates protocol 2 (IGMP) to node n3
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <cassert>
+#include "ns3/traffic-control-module.h"
+#include "ns3/flow-monitor-module.h"
+#include "ns3/core-module.h"
+#include "ns3/network-module.h"
+#include "ns3/csma-module.h"
+#include "ns3/applications-module.h"
+#include "ns3/internet-apps-module.h"
+#include "ns3/internet-module.h"
+
+using namespace ns3;
+
+int
+main (int argc, char *argv[])
+{
+
+  std::string transportProt = "Udp";
+  std::string socketType;
+
+  if (transportProt.compare ("Tcp") == 0)
+    {
+      socketType = "ns3::TcpSocketFactory";
+    }
+  else
+    {
+      socketType = "ns3::UdpSocketFactory";
+    }
+
+ NS_LOG_UNCOND ("Create nodes.");
+ NodeContainer c;
+ c.Create (6);
+
+  // connect all our nodes to a shared channel.
+  NS_LOG_INFO ("Build Topology.");
+  CsmaHelper csma;
+  csma.SetChannelAttribute ("DataRate", DataRateValue (DataRate (5000000)));
+  csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
+  csma.SetDeviceAttribute ("EncapsulationMode", StringValue ("Llc"));
+  NetDeviceContainer devs = csma.Install (c);
+
+  // add an ip stack to all nodes.
+  NS_LOG_INFO ("Add ip stack.");
+  InternetStackHelper ipStack;
+  ipStack.Install (c);
+
+  // assign ip addresses
+  NS_LOG_INFO ("Assign ip addresses.");
+  Ipv4AddressHelper ip;
+  ip.SetBase ("192.168.1.0", "255.255.255.0");
+  Ipv4InterfaceContainer addresses = ip.Assign (devs);
+
+  NS_LOG_INFO ("Create Source");
+  Config::SetDefault ("ns3::Ipv4RawSocketImpl::Protocol", StringValue ("2"));
+  InetSocketAddress dst = InetSocketAddress (addresses.GetAddress (3));
+  OnOffHelper onoff = OnOffHelper ("ns3::Ipv4RawSocketFactory", dst);
+  onoff.SetAttribute ("OnTime",  StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
+  onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
+  onoff.SetAttribute ("PacketSize", UintegerValue (1100));
+  onoff.SetAttribute ("DataRate", StringValue ("50Mbps")); //bit/s
+
+  ApplicationContainer apps = onoff.Install (c.Get (0));
+  apps.Start (Seconds (1.0));
+  apps.Stop (Seconds (10.0));
+
+  NS_LOG_INFO ("Create Sink.");
+  PacketSinkHelper sink = PacketSinkHelper ("ns3::Ipv4RawSocketFactory", dst);
+  apps = sink.Install (c.Get (3));
+  apps.Start (Seconds (0.0));
+  apps.Stop (Seconds (11.0));
+
+  NS_LOG_INFO ("Create pinger");
+  V4PingHelper ping = V4PingHelper (addresses.GetAddress (0));
+  NodeContainer pingers;
+  pingers.Add (c.Get (1));
+  pingers.Add (c.Get (2));
+  pingers.Add (c.Get (3));
+  pingers.Add (c.Get (4));
+  pingers.Add (c.Get (5));
+  apps = ping.Install (pingers);
+  apps.Start (Seconds (2.0));
+  apps.Stop (Seconds (5.0));
+
+  FlowMonitorHelper flowmon;
+  Ptr<FlowMonitor> monitor = flowmon.InstallAll();
+
+
+  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+
+  Simulator::Stop (Seconds (10.0));
+  NS_LOG_INFO ("Run Simulation.");
+  Simulator::Run ();
+   monitor->CheckForLostPackets ();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
+  std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
+  std::cout << std::endl << "*** Flow monitor statistics ***" << std::endl;
+  std::cout << "  Tx Packets/Bytes:   " << stats[1].txPackets<< " / " << stats[1].txBytes << std::endl;
+  std::cout << "  Offered Load: " << stats[1].txBytes * 8.0 / (stats[1].timeLastTxPacket.GetSeconds () - stats[1].timeFirstTxPacket.GetSeconds ()) / 1000000 << " Mbps" << std::endl;
+  std::cout << "  Rx Packets/Bytes:   " << stats[1].rxPackets<< " / " << stats[1].rxBytes << std::endl;
+  std::cout << "  Lost Packets:   " << stats[1].lostPackets << std::endl;
+  
+  Simulator::Destroy ();
+  NS_LOG_INFO ("Done.");
+}
